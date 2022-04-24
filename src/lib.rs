@@ -1,3 +1,5 @@
+mod converter;
+
 use wasm_bindgen::prelude::*;
 // use std::fs;
 // use aho_corasick::AhoCorasick;
@@ -49,4 +51,15 @@ async fn load_vietphrase() -> Result<JsValue, JsValue> {
 
     Ok(text)
 
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::converter::*;
+
+    #[test]
+    fn it_works() {
+        assert_eq!("edf fgh", convert("abc=edf", "abc fgh"));
+    }
 }
