@@ -11,17 +11,19 @@ use web_sys::{Request, RequestInit, RequestMode, Response};
 #[wasm_bindgen]
 extern "C" {
     pub fn alert(s: &str);
+    pub fn getContent() -> String;
     // pub async fn loadVietphrase() -> JsValue;
 }
 
+
 #[wasm_bindgen]
 pub async fn convert() -> String {
-    // alert(&format!("Hello, {}!", name));
     let vietphrases = load_vietphrase().await;
+    // res = converter::convert(&vietphrases.as_string().unwrap(), &content);
     // let vietphrases = executor::block_on(loadVietphrase().await?);
     println!("Finish wait");
     match vietphrases {
-        Ok(v) => return format!("Hello, {}!", v.as_string().unwrap()),
+        Ok(v) => return converter::convert(&v.as_string().unwrap(), &getContent()),
         Err(_v) => return "Error!".to_string(),
     }
 }
