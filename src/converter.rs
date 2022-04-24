@@ -1,4 +1,4 @@
-use aho_corasick::AhoCorasick;
+use aho_corasick::*;
 use std::collections::HashMap;
 
 pub fn convert(dicts: &str, content: &str) -> String {
@@ -18,7 +18,7 @@ pub fn convert(dicts: &str, content: &str) -> String {
       map.insert(k, v);
     }
 
-    let ac = AhoCorasick::new(map.keys());
+    let ac = AhoCorasickBuilder::new().match_kind(MatchKind::LeftmostLongest).build(map.keys());
 
     let mut res = String::from(content);
     for mat in ac.find_iter(content) {
