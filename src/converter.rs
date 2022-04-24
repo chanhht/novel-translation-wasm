@@ -8,17 +8,25 @@ pub fn convert(dicts: &str, content: &str) -> String {
     // let patterns = &["Samwise", "Sam"];
 
     for line in lines {
+      if line.is_empty() {
+        continue;
+      }
       let mut pairs = line.split("=");
       let k = pairs.next().unwrap();
       let v = pairs.next().unwrap();
+      // println!("{} = {}", k , v);
       map.insert(k, v);
-      println!("{} = {}", k , v)
     }
 
     let ac = AhoCorasick::new(map.keys());
-    let mat = ac.find(content).expect("should have a match");
-    let mat_str = &content[mat.start()..mat.end()];
-    let replace_str = map.get(mat_str);
-    return content.replace(mat_str, replace_str.unwrap());
+
+    let mut res = String::from(content);
+    for mat in ac.find_iter(content) {
+      let mat_str = &content[mat.start()..mat.end()];
+      let replace_str = map.get(mat_str);
+      res = res.replace(mat_str, replace_str.unwrap());
+    }
+    
+    return res;
     
 }
