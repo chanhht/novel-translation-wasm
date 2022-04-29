@@ -18,22 +18,29 @@ extern "C" {
 
 #[wasm_bindgen]
 pub async fn convert() -> String {
-    let vietphrases = load_vietphrase().await;
+    let vietphrases_future = load_vietphrase("dicts/vietphrase.txt");
+    let names_future = load_vietphrase("dicts/names.txt");
+    let hanviet_future = load_vietphrase("dicts/hanviet.txt");
+    
+    let vietphrases = vietphrases_future.await.expect("something wrong");
+    let names = names_future.await.expect("something wrong");
+    let hanviet = hanviet_future.await.expect("something wrong");
+
+    // let names = load_vietphrase("dicts/names.txt").await;
+    // let hanviet = load_vietphrase("dicts/hanviet.txt").await;
     // res = converter::convert(&vietphrases.as_string().unwrap(), &content);
     // let vietphrases = executor::block_on(loadVietphrase().await?);
-    println!("Finish wait");
-    match vietphrases {
-        Ok(v) => return converter::convert(&v.as_string().unwrap(), &getContent()),
-        Err(_v) => return "Error!".to_string(),
-    }
+    return converter::convert(&vietphrases.as_string().unwrap(), 
+                    &names.as_string().unwrap(), 
+                    &hanviet.as_string().unwrap(), &getContent())
 }
 
-async fn load_vietphrase() -> Result<JsValue, JsValue> {
+async fn load_vietphrase(url: &str) -> Result<JsValue, JsValue> {
     let mut opts = RequestInit::new();
     opts.method("GET");
     opts.mode(RequestMode::Cors);
 
-    let url = getMainDict();
+    // let url = getMainDict();
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
@@ -63,18 +70,22 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!("edf fgh", convert("abc=edf", "abc fgh"));
+        assert_eq!("edf fgh", convert("abc=edf", "abc=edf", "abc=edf", "abc fgh"));
     }
 
     #[test]
     fn it_works_no_change() {
-        assert_eq!("hello get content", convert("abc=edf", "hello get content"));
+        assert_eq!("hello get content", convert("abc=edf", "abc=edf", "abc=edf", "hello get content"));
     }
 
     #[test]
     fn load_big_file() {
-        let contents = fs::read_to_string("dicts/vietphrase.txt")
+        let vietphrase = fs::read_to_string("dicts/vietphrase.txt")
             .expect("Something went wrong reading the file");
-        assert_eq!("hello get content", convert(&contents, "hello get content"));
+        let names = fs::read_to_string("dicts/names.txt")
+            .expect("Something went wrong reading the file");
+        let hanviet = fs::read_to_string("dicts/hanviet.txt")
+            .expect("Something went wrong reading the file");
+        assert_eq!("hello get content", convert(&vietphrase, &names, &hanviet, "hello get content"));
     }
 }
