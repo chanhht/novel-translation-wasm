@@ -75,7 +75,7 @@ mod tests {
 
     #[test]
     fn it_works_no_change() {
-        assert_eq!("hello get content", convert("abc=edf", "abc=edf", "abc=edf", "hello get content"));
+        assert_eq!("bổn thành ", convert("abc=edf", "abc=edf", "笨=bổn\n成=thành", "笨成"));
     }
 
     #[test]
