@@ -23,12 +23,23 @@ pub fn convert(vietphrase: &str, hanviet: &str, names: &str, content: &str) -> S
 
     let mut res = String::new();
     let mut last = 0;
+    let mut previous_char = "";
     for char_index in content.grapheme_indices(true) {
       let i = char_index.0;
       if i < last {
         continue;
       }
       last = 0;
+      let current_char = char_index.1;
+      // adding space?
+      if !previous_char.trim().is_empty() && previous_char != "\"" {
+        let pc = previous_char.chars().next().unwrap();
+        let cc = current_char.chars().next().unwrap();
+        if (cc.is_alphabetic()) || (pc.is_alphabetic() && cc.is_alphanumeric()) {
+          res.push_str(" ");
+        }
+      }
+      
       if replacement_bit_vec.get(i).unwrap() {
         let mat = replacements.get(&i).unwrap();
         let mat_str = &content[mat.start()..mat.end()];
@@ -36,15 +47,15 @@ pub fn convert(vietphrase: &str, hanviet: &str, names: &str, content: &str) -> S
         res.push_str(*replace_str);
         last = mat.end();
       } else {
-        let single_char = char_index.1;
-        let replace_str = hanviet_map.get(single_char);
+        let replace_str = hanviet_map.get(current_char);
         if replace_str.is_some() {
           res.push_str(*replace_str.unwrap());
         } else {
-          res.push_str(single_char);
+          res.push_str(current_char);
         }
       }
-      res.push_str(" ");
+      previous_char = current_char;
+      // res.push_str(" ");
     }
 
     // normalize content
