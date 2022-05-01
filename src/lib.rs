@@ -69,13 +69,13 @@ mod tests {
     use std::fs;
 
     #[test]
-    fn it_works() {
-        assert_eq!("edf fgh", convert("abc=edf", "abc=edf", "abc=edf", "abc fgh"));
+    fn it_works_no_change() {
+        assert_eq!("笨 成", convert("abc=edf", "abc=edf", "abc=edf", "笨成"));
     }
 
     #[test]
-    fn it_works_no_change() {
-        assert_eq!("bổn thành ", convert("abc=edf", "abc=edf", "笨=bổn\n成=thành", "笨成"));
+    fn it_works() {
+        assert_eq!("Bổn thành", convert("abc=edf", "abc=edf", "笨=bổn\n成=thành", "笨成"));
     }
 
     #[test]
@@ -86,6 +86,6 @@ mod tests {
             .expect("Something went wrong reading the file");
         let hanviet = fs::read_to_string("dicts/hanviet.txt")
             .expect("Something went wrong reading the file");
-        assert_eq!("hello get content", convert(&vietphrase, &names, &hanviet, "hello get content"));
+        assert_eq!("Thứ nhất chương thái dương biến mất()\nThời gian:2012 niên 12 nguyệt 22 nhật", convert(&vietphrase, &names, &hanviet, "第一章 太阳消失()\n时间:2012年12月22日"));
     }
 }
