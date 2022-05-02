@@ -1,49 +1,65 @@
 <template>
-  <q-page class="row items-center justify-evenly">
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
-  </q-page>
+  <div class="row items-start justify-evenly q-ma-xl">
+    <div class="col-5">
+      <q-input
+        v-model="inputText"
+        outlined
+        rows="20"
+        type="textarea"
+      />
+      <div class="row items-center justify-center">
+        <q-btn color="primary" label="Translate" class="q-ma-sm" @click="translate" />
+      </div>
+    </div>
+    <div class="col-5">
+      <q-scroll-area 
+        :thumb-style="thumbStyle"
+        :content-style="contentStyle"
+        :content-active-style="contentActiveStyle"
+        style="height: 700px"
+      >
+        <div v-for="n in 100" :key="n" class="q-py-xs">
+          Lorem ipsum dolor sit amet, consectetur adipisicing
+          elit, sed do eiusmod tempor incididunt ut labore et
+          dolore magna aliqua.
+        </div>
+      </q-scroll-area>
+    </div>
+  </div>
 </template>
 
-<script lang="ts">
-import { Todo, Meta } from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
-import { defineComponent, ref } from 'vue';
+<script>
+export default {
+  setup () {
+    return {
+      contentStyle: {
+        backgroundColor: 'rgba(0,0,0,0.02)',
+        color: '#555'
+      },
 
-export default defineComponent({
-  name: 'IndexPage',
-  components: { ExampleComponent },
-  setup() {
-    const todos = ref<Todo[]>([
-      {
-        id: 1,
-        content: 'ct1'
+      contentActiveStyle: {
+        backgroundColor: '#eee',
+        color: 'black'
       },
-      {
-        id: 2,
-        content: 'ct2'
-      },
-      {
-        id: 3,
-        content: 'ct3'
-      },
-      {
-        id: 4,
-        content: 'ct4'
-      },
-      {
-        id: 5,
-        content: 'ct5'
+
+      thumbStyle: {
+        right: '2px',
+        borderRadius: '5px',
+        backgroundColor: '#027be3',
+        width: '5px',
+        opacity: '0.75'
       }
-    ]);
-    const meta = ref<Meta>({
-      totalCount: 1200
-    });
-    return { todos, meta };
+    }
+  },
+  data() {
+    return {
+      inputText: ''
+    }
+  },
+  methods: {
+    translate() {
+      console.log(this.inputText)
+    }
   }
-});
+}
 </script>
