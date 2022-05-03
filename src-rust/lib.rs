@@ -7,16 +7,13 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
 
-#[wasm_bindgen]
-extern "C" {
-    pub fn alert(s: &str);
-    pub fn getContent() -> String;
-    pub fn getMainDict() -> String;
-    // pub async fn loadVietphrase() -> JsValue;
-}
+// #[wasm_bindgen]
+// extern "C" {
+//     pub fn getMainDict() -> String;
+// }
 
 #[wasm_bindgen]
-pub async fn convert() -> String {
+pub async fn convert(input: String) -> String {
     let vietphrases_future = load_vietphrase("dicts/vietphrase.txt");
     let names_future = load_vietphrase("dicts/names.txt");
     let hanviet_future = load_vietphrase("dicts/hanviet.txt");
@@ -33,7 +30,7 @@ pub async fn convert() -> String {
         &vietphrases.as_string().unwrap(),
         &names.as_string().unwrap(),
         &hanviet.as_string().unwrap(),
-        &getContent(),
+        &input,
     );
 }
 
@@ -82,12 +79,12 @@ mod tests {
 
     #[test]
     fn load_big_file() {
-        let vietphrase = fs::read_to_string("dicts/vietphrase.txt")
+        let vietphrase = fs::read_to_string("public/dicts/vietphrase.txt")
             .expect("Something went wrong reading the file");
         let names =
-            fs::read_to_string("dicts/names.txt").expect("Something went wrong reading the file");
+            fs::read_to_string("public/dicts/names.txt").expect("Something went wrong reading the file");
         let hanviet =
-            fs::read_to_string("dicts/hanviet.txt").expect("Something went wrong reading the file");
+            fs::read_to_string("public/dicts/hanviet.txt").expect("Something went wrong reading the file");
         assert_eq!(
             "Thứ nhất chương thái dương biến mất()\nThời gian:2012 niên 12 nguyệt 22 nhật",
             convert(
@@ -95,6 +92,15 @@ mod tests {
                 &names,
                 &hanviet,
                 "第一章 太阳消失()\n时间:2012年12月22日"
+            )
+        );
+        assert_eq!(
+            "Của ta giá chương rất lớn， thỉnh nhẫn một chút！",
+            convert(
+                &vietphrase,
+                &names,
+                &hanviet,
+                "我的这章很大，请忍一下！"
             )
         );
     }

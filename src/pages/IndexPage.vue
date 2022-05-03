@@ -12,23 +12,21 @@
       </div>
     </div>
     <div class="col-5">
-      <q-scroll-area 
-        :thumb-style="thumbStyle"
-        :content-style="contentStyle"
-        :content-active-style="contentActiveStyle"
-        style="height: 700px"
-      >
-        <div v-for="n in 100" :key="n" class="q-py-xs">
-          Lorem ipsum dolor sit amet, consectetur adipisicing
-          elit, sed do eiusmod tempor incididunt ut labore et
-          dolore magna aliqua.
-        </div>
-      </q-scroll-area>
+      <q-input
+        v-model="outputText"
+        outlined
+        rows="20"
+        type="textarea"
+      />
     </div>
   </div>
 </template>
 
 <script>
+import init, {convert} from '../wasm/mylib.js';
+
+init()
+
 export default {
   setup () {
     return {
@@ -53,12 +51,16 @@ export default {
   },
   data() {
     return {
-      inputText: ''
+      inputText: '',
+      outputText: ''
     }
   },
   methods: {
     translate() {
-      console.log(this.inputText)
+      convert(this.inputText).then(outputText => {
+        this.outputText = outputText
+        console.log(outputText)
+      })
     }
   }
 }

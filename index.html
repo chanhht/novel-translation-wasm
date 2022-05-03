@@ -13,8 +13,12 @@
         return text;
         {{/* return "Hello from loadVietphrase"; */}}
       }
-      function getContent() {
-        return `
+    </script>
+    <script type="module">
+      import init, {convert} from "./pkg/mylib.js";
+      init()
+        .then(() => {
+          const result = convert(`
 第一章 太阳消失()
 时间：2012年12月22日
 ...
@@ -58,17 +62,7 @@
 世界末日,你准备好了吗?
 2012,你买好船票了吗?
 ...
-        `;
-      }
-      function getMainDict() {
-        return "dicts/vietphrase.txt";
-      }
-    </script>
-    <script type="module">
-      import init, {convert} from "./pkg/mylib.js";
-      init()
-        .then(() => {
-          const result = convert();
+        `);
           result.then(r => console.log(r));
         });
     </script>

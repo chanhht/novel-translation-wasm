@@ -3,6 +3,8 @@
 Cargo.lock
 .vscode
 
+src/wasm
+
 .DS_Store
 .thumbs.db
 node_modules

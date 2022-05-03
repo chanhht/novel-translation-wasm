@@ -45,7 +45,7 @@ pub fn convert(vietphrase: &str, hanviet: &str, names: &str, content: &str) -> S
             let mat = replacements.get(&i).unwrap();
             let mat_str = &content[mat.start()..mat.end()];
             let replace_str = vietphrase_map.get(mat_str).unwrap();
-            res.push_str(*replace_str);
+            res.push_str(&*replace_str.trim_end());
             last = mat.end();
         } else {
             let replace_str = hanviet_map.get(current_char);
@@ -56,13 +56,11 @@ pub fn convert(vietphrase: &str, hanviet: &str, names: &str, content: &str) -> S
             }
         }
         previous_char = current_char;
-        // res.push_str(" ");
     }
 
     // normalize content
     let mut formalized_str = String::new();
     let mut begin_sentence = true;
-    // let previous_char = None;
     for char_index in res.grapheme_indices(true) {
         let char = char_index.1;
         if char == "\n" || char == "?" || char == "!" || char == "." {
