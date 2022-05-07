@@ -78,6 +78,14 @@ mod tests {
     }
 
     #[test]
+    fn multiple_meaning() {
+        assert_eq!(
+            "Mau",
+            convert("快=mau/khoái", "abc=edf", "", "快")
+        );
+    }
+   
+    #[test]
     fn load_big_file() {
         let vietphrase = fs::read_to_string("public/dicts/vietphrase.txt")
             .expect("Something went wrong reading the file");
@@ -103,5 +111,15 @@ mod tests {
                 "我的这章很大，请忍一下！"
             )
         );
+        assert_eq!(
+            "Khoái nghĩ biện pháp a！ chúng ta sẽ không chết đâu",
+            convert(
+                &vietphrase,
+                &names,
+                &hanviet,
+                "快想办法啊！我们会没命的"
+            )
+        );
+
     }
 }
