@@ -101,7 +101,18 @@ mod tests {
             .expect("Something went wrong reading the file");
         let pronouns = fs::read_to_string("public/dicts/pronouns.txt")
             .expect("Something went wrong reading the file");
-            assert_eq!(
+        assert_eq!(
+            "Làm ta bị thương nặng",
+                convert(
+                    &luatnhan,
+                    &vietphrase,
+                    &names,
+                    &hanviet,
+                    &pronouns,
+                    "重伤了我"
+                )
+            );    
+        assert_eq!(
             "Chương thứ nhất thái dương biến mất()\nThời gian:2012 niên 12 nguyệt 22 nhật",
             convert(
                 &luatnhan,

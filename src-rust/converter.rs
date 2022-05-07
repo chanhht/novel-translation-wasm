@@ -39,6 +39,8 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
     let mut luatnhan_pairs = HashMap::new();
     let mut luatnhan_right_edges = HashMap::new();
     let mut luatnhan_left_edges = HashMap::new();
+    let mut luatnhan_right_edges_value = HashMap::new();
+    let mut luatnhan_left_edges_value = HashMap::new();
     let mut luatnhan_idx_pairs = HashMap::new();
     let mut vec = Vec::new();
     for mat in aho_corasick_luatnhan.find_iter(content) {
@@ -49,11 +51,15 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
         let luatnhan_phrase = &content[mat.start()..mat.end()];
         let start = mat.start();
         let end = mat.end();
-        if luatnhan_pair_phrases.contains_key(&format!("{}_", luatnhan_phrase)) {
+        let left_phrase = format!("{}_", luatnhan_phrase);
+        let right_phrase = format!("_{}", luatnhan_phrase);
+        if luatnhan_pair_phrases.contains_key(&left_phrase) {
             luatnhan_left_edges.insert(start, mat.clone());
+            luatnhan_left_edges_value.insert(start, *luatnhan_pair_phrases.get(&left_phrase).unwrap());
         }
-        if luatnhan_pair_phrases.contains_key(&format!("_{}", luatnhan_phrase)) {
+        if luatnhan_pair_phrases.contains_key(&right_phrase) {
             luatnhan_right_edges.insert(start, mat.clone());
+            luatnhan_right_edges_value.insert(start, *luatnhan_pair_phrases.get(&right_phrase).unwrap());
         }
         if pre_mat.is_some() {
             let pre_match = pre_mat.unwrap();
@@ -108,16 +114,46 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
             }
         }
 
+        let mut found = false;
+
         if luatnhan_idx_pairs.contains_key(&i) {
             res.push_str(&*luatnhan_pairs.get(&i).unwrap().trim_end());
             last = *luatnhan_idx_pairs.get(&i).unwrap();
-        } else if replacement_bit_vec.get(i).unwrap() {
+            found = true;
+        } 
+        
+        if !found && luatnhan_left_edges.contains_key(&i) {
+            let next = luatnhan_left_edges.get(&i).unwrap().end();
+            if replacement_bit_vec.get(next).unwrap() {
+                let mat = replacements.get(&next).unwrap();
+                let mat_str = &content[mat.start()..mat.end()];
+                let replace_str = vietphrase_map.get(mat_str).unwrap();
+                let phrase_value = *luatnhan_left_edges_value.get(&i).unwrap();
+                let translated = phrase_value.replace("{0}", *replace_str);
+                res.push_str(translated.trim_end());
+                found = true;
+                last = mat.end();
+            }
+        } 
+        
+        if !found && replacement_bit_vec.get(i).unwrap() {
             let mat = replacements.get(&i).unwrap();
             let mat_str = &content[mat.start()..mat.end()];
             let replace_str = vietphrase_map.get(mat_str).unwrap();
-            res.push_str(&*replace_str.trim_end());
-            last = mat.end();
-        } else {
+            let next = mat.end();
+            if luatnhan_right_edges.contains_key(&next) {
+                let phrase_value = *luatnhan_right_edges_value.get(&next).unwrap();
+                let translated = phrase_value.replace("{0}", *replace_str);
+                res.push_str(translated.trim_end());
+                last = luatnhan_right_edges.get(&next).unwrap().end();
+            } else {
+                res.push_str(&*replace_str.trim_end());
+                last = mat.end();
+            }
+            found = true;
+        }
+        
+        if !found {
             let replace_str = hanviet_map.get(current_char);
             if replace_str.is_some() {
                 res.push_str(*replace_str.unwrap());
