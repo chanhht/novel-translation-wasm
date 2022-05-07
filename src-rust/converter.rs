@@ -1,16 +1,83 @@
 use aho_corasick::*;
 use bit_vec::BitVec;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use unicode_segmentation::UnicodeSegmentation;
 
-pub fn convert(vietphrase: &str, hanviet: &str, names: &str, content: &str) -> String {
+pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pronouns: &str, content: &str) -> String {
+    let mut luatnhan_map = HashMap::new();
     let mut vietphrase_map = HashMap::new();
     let mut hanviet_map = HashMap::new();
+    let mut pronouns_map = HashMap::new();
 
+    luatnhan_map = load_dict(&luatnhan, luatnhan_map);
     vietphrase_map = load_dict(&vietphrase, vietphrase_map);
     vietphrase_map = load_dict(&names, vietphrase_map);
     hanviet_map = load_dict(&hanviet, hanviet_map);
+    pronouns_map = load_dict(&pronouns, pronouns_map);
 
+    // build luatnhan aho corasick
+    let mut luatnhan_phrases = HashSet::new();
+    let mut luatnhan_pair_phrases = HashMap::new();
+    for (k, v)  in luatnhan_map.iter() {
+        let mut ps = k.splitn(2, "{0}");
+        let ps1 = ps.next().unwrap();
+        let ps2 = ps.next().unwrap();
+        if !ps1.is_empty() {
+            luatnhan_phrases.insert(ps1);
+        }
+        if !ps2.is_empty() {
+            luatnhan_phrases.insert(ps2);
+        }
+        luatnhan_pair_phrases.insert(format!("{}_{}", ps1, ps2), *v);
+    }
+
+    let aho_corasick_luatnhan = AhoCorasickBuilder::new()
+        .match_kind(MatchKind::LeftmostLongest)
+        .build(luatnhan_phrases);
+
+    let mut pre_mat: Option<Match> = None;
+    let mut luatnhan_pairs = HashMap::new();
+    let mut luatnhan_right_edges = HashMap::new();
+    let mut luatnhan_left_edges = HashMap::new();
+    let mut luatnhan_idx_pairs = HashMap::new();
+    let mut vec = Vec::new();
+    for mat in aho_corasick_luatnhan.find_iter(content) {
+        vec.push(mat);
+    }
+    vec.sort_by(|a, b| a.start().cmp(&b.start()));
+    for mat in vec {
+        let luatnhan_phrase = &content[mat.start()..mat.end()];
+        let start = mat.start();
+        let end = mat.end();
+        if luatnhan_pair_phrases.contains_key(&format!("{}_", luatnhan_phrase)) {
+            luatnhan_left_edges.insert(start, mat.clone());
+        }
+        if luatnhan_pair_phrases.contains_key(&format!("_{}", luatnhan_phrase)) {
+            luatnhan_right_edges.insert(start, mat.clone());
+        }
+        if pre_mat.is_some() {
+            let pre_match = pre_mat.unwrap();
+            let phrase_key = format!("{}_{}", &content[pre_match.start()..pre_match.end()], luatnhan_phrase);
+            if luatnhan_pair_phrases.contains_key(&phrase_key) {
+                let phrase = &content[pre_match.end()..start];
+                let mut extracted = "";
+                if vietphrase_map.contains_key(phrase) {
+                    extracted = vietphrase_map.get(phrase).unwrap();
+                } else if pronouns_map.contains_key(phrase) {
+                    extracted = pronouns_map.get(phrase).unwrap();
+                }
+                if !extracted.is_empty() {
+                    let phrase_value = *luatnhan_pair_phrases.get(&phrase_key).unwrap();
+                    let translated = phrase_value.replace("{0}", extracted);
+                    luatnhan_pairs.insert(pre_match.start(), translated);
+                    luatnhan_idx_pairs.insert(pre_match.start(), end);
+                }
+            }
+        }
+        pre_mat = Some(mat);
+    }    
+
+    // build vietphrase aho corasick
     let ac = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
         .build(vietphrase_map.keys());
@@ -41,7 +108,10 @@ pub fn convert(vietphrase: &str, hanviet: &str, names: &str, content: &str) -> S
             }
         }
 
-        if replacement_bit_vec.get(i).unwrap() {
+        if luatnhan_idx_pairs.contains_key(&i) {
+            res.push_str(&*luatnhan_pairs.get(&i).unwrap().trim_end());
+            last = *luatnhan_idx_pairs.get(&i).unwrap();
+        } else if replacement_bit_vec.get(i).unwrap() {
             let mat = replacements.get(&i).unwrap();
             let mat_str = &content[mat.start()..mat.end()];
             let replace_str = vietphrase_map.get(mat_str).unwrap();
