@@ -7,28 +7,43 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
     let mut luatnhan_map = HashMap::new();
     let mut vietphrase_map = HashMap::new();
     let mut hanviet_map = HashMap::new();
+    let mut names_map = HashMap::new();
     let mut pronouns_map = HashMap::new();
 
     luatnhan_map = load_dict(&luatnhan, luatnhan_map);
     vietphrase_map = load_dict(&vietphrase, vietphrase_map);
-    vietphrase_map = load_dict(&names, vietphrase_map);
+    names_map = load_dict(&names, names_map);
     hanviet_map = load_dict(&hanviet, hanviet_map);
     pronouns_map = load_dict(&pronouns, pronouns_map);
+
+    vietphrase_map.extend(&names_map);
+    vietphrase_map.extend(&pronouns_map);
 
     // build luatnhan aho corasick
     let mut luatnhan_phrases = HashSet::new();
     let mut luatnhan_pair_phrases = HashMap::new();
     for (k, v)  in luatnhan_map.iter() {
-        let mut ps = k.splitn(2, "{0}");
-        let ps1 = ps.next().unwrap();
-        let ps2 = ps.next().unwrap();
+        if k.is_empty() {
+            continue;
+        }
+        let mut ps = k.trim().splitn(2, "{0}");
+        let ps1 = ps.next().unwrap().trim();
+        let ps2 = ps.next().unwrap().trim();
         if !ps1.is_empty() {
             luatnhan_phrases.insert(ps1);
+        } else {
+            luatnhan_pair_phrases.insert(format!("_{}", ps2), *v);
         }
+
         if !ps2.is_empty() {
             luatnhan_phrases.insert(ps2);
+        } else {
+            luatnhan_pair_phrases.insert(format!("{}_", ps1), *v);
         }
-        luatnhan_pair_phrases.insert(format!("{}_{}", ps1, ps2), *v);
+
+        if !ps1.is_empty() && !ps2.is_empty() {
+            luatnhan_pair_phrases.insert(format!("{}_{}", ps1, ps2), *v);
+        }
     }
 
     let aho_corasick_luatnhan = AhoCorasickBuilder::new()
@@ -48,7 +63,7 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
     }
     vec.sort_by(|a, b| a.start().cmp(&b.start()));
     for mat in vec {
-        let luatnhan_phrase = &content[mat.start()..mat.end()];
+        let luatnhan_phrase = content[mat.start()..mat.end()].trim();
         let start = mat.start();
         let end = mat.end();
         let left_phrase = format!("{}_", luatnhan_phrase);
@@ -67,10 +82,12 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
             if luatnhan_pair_phrases.contains_key(&phrase_key) {
                 let phrase = &content[pre_match.end()..start];
                 let mut extracted = "";
-                if vietphrase_map.contains_key(phrase) {
-                    extracted = vietphrase_map.get(phrase).unwrap();
+                if names_map.contains_key(phrase) {
+                    extracted = names_map.get(phrase).unwrap();
                 } else if pronouns_map.contains_key(phrase) {
                     extracted = pronouns_map.get(phrase).unwrap();
+                } else if vietphrase_map.contains_key(phrase) && phrase.len() <= 5 {
+                    extracted = vietphrase_map.get(phrase).unwrap();
                 }
                 if !extracted.is_empty() {
                     let phrase_value = *luatnhan_pair_phrases.get(&phrase_key).unwrap();
@@ -117,7 +134,7 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
         let mut found = false;
 
         if luatnhan_idx_pairs.contains_key(&i) {
-            res.push_str(&*luatnhan_pairs.get(&i).unwrap().trim_end());
+            res.push_str(&*luatnhan_pairs.get(&i).unwrap().trim());
             last = *luatnhan_idx_pairs.get(&i).unwrap();
             found = true;
         } 
@@ -127,10 +144,10 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
             if replacement_bit_vec.get(next).unwrap() {
                 let mat = replacements.get(&next).unwrap();
                 let mat_str = &content[mat.start()..mat.end()];
-                let replace_str = vietphrase_map.get(mat_str).unwrap();
+                let replace_str = vietphrase_map.get(mat_str).unwrap().trim();
                 let phrase_value = *luatnhan_left_edges_value.get(&i).unwrap();
-                let translated = phrase_value.replace("{0}", *replace_str);
-                res.push_str(translated.trim_end());
+                let translated = phrase_value.replace("{0}", replace_str);
+                res.push_str(translated.trim());
                 found = true;
                 last = mat.end();
             }
@@ -139,15 +156,15 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
         if !found && replacement_bit_vec.get(i).unwrap() {
             let mat = replacements.get(&i).unwrap();
             let mat_str = &content[mat.start()..mat.end()];
-            let replace_str = vietphrase_map.get(mat_str).unwrap();
+            let replace_str = vietphrase_map.get(mat_str).unwrap().trim();
             let next = mat.end();
             if luatnhan_right_edges.contains_key(&next) {
                 let phrase_value = *luatnhan_right_edges_value.get(&next).unwrap();
-                let translated = phrase_value.replace("{0}", *replace_str);
-                res.push_str(translated.trim_end());
+                let translated = phrase_value.replace("{0}", replace_str);
+                res.push_str(translated.trim());
                 last = luatnhan_right_edges.get(&next).unwrap().end();
             } else {
-                res.push_str(&*replace_str.trim_end());
+                res.push_str(replace_str);
                 last = mat.end();
             }
             found = true;
@@ -172,7 +189,7 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
         if char == "\n" || char == "?" || char == "!" || char == "." {
             begin_sentence = true;
             formalized_str.push_str(char);
-        } else if begin_sentence && char.chars().next().unwrap().is_lowercase() {
+        } else if begin_sentence && char.chars().next().unwrap().is_alphabetic() {
             formalized_str.push_str(&char.to_uppercase());
             begin_sentence = false;
         } else {
@@ -188,11 +205,11 @@ fn load_dict<'a>(dict: &'a str, mut map: HashMap<&'a str, &'a str>) -> HashMap<&
         if line.is_empty() {
             continue;
         }
-        let mut pairs = line.split("=");
-        let k = pairs.next().unwrap();
-        let v = pairs.next().unwrap();
+        let mut pairs = line.trim().split("=");
+        let k = pairs.next().unwrap().trim();
+        let v = pairs.next().unwrap().trim();
         let mut options = v.splitn(2, "/");
-        let option1 = options.next().unwrap();
+        let option1 = options.next().unwrap().trim();
         // println!("{} = {}", k , v);
         map.insert(k, option1);
     }

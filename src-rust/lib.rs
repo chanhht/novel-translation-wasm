@@ -102,45 +102,56 @@ mod tests {
         let pronouns = fs::read_to_string("public/dicts/pronouns.txt")
             .expect("Something went wrong reading the file");
         assert_eq!(
+            "Chương một Thái Dương biến mất\nThời gian:2012 năm 12 nguyệt 22 ngày",
+            convert(
+                &luatnhan,
+                &vietphrase,
+                &hanviet,
+                &names,
+                &pronouns,
+                "第一章 太阳消失\n时间:2012年12月22日"
+            )
+        );
+        assert_eq!(
+            "Quân đoàn Nỗ Mễ Khải Lạp Khắc",
+                convert(
+                    &luatnhan,
+                    &vietphrase,
+                    &hanviet,
+                    &names,
+                    &pronouns,
+                    "努米凯拉克军团"
+                )
+            );
+        assert_eq!(
             "Làm ta bị thương nặng",
                 convert(
                     &luatnhan,
                     &vietphrase,
-                    &names,
                     &hanviet,
+                    &names,
                     &pronouns,
                     "重伤了我"
                 )
-            );    
+            );
         assert_eq!(
-            "Chương thứ nhất thái dương biến mất()\nThời gian:2012 niên 12 nguyệt 22 nhật",
+            "Này của ta chương rất lớn， thỉnh nhẫn một chút！",
             convert(
                 &luatnhan,
                 &vietphrase,
-                &names,
                 &hanviet,
-                &pronouns,
-                "第一章 太阳消失()\n时间:2012年12月22日"
-            )
-        );
-        assert_eq!(
-            "Của ta giá chương rất lớn， thỉnh nhẫn một chút！",
-            convert(
-                &luatnhan,
-                &vietphrase,
                 &names,
-                &hanviet,
                 &pronouns,
                 "我的这章很大，请忍一下！"
             )
         );
         assert_eq!(
-            "Khoái nghĩ biện pháp a！ chúng ta sẽ không chết đâu",
+            "Mau nghĩ biện pháp a！ chúng ta sẽ không chết đâu",
             convert(
                 &luatnhan,
                 &vietphrase,
-                &names,
                 &hanviet,
+                &names,
                 &pronouns,
                 "快想办法啊！我们会没命的"
             )
