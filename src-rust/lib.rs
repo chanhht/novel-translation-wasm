@@ -1,5 +1,7 @@
 mod converter;
+mod dictionary;
 
+use dictionary::Dictionary;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
@@ -12,11 +14,12 @@ use web_sys::{Request, RequestInit, RequestMode, Response};
 
 #[wasm_bindgen]
 pub async fn convert(input: String) -> String {
-    let vietphrases_future = load_vietphrase("dicts/vietphrase.txt");
-    let names_future = load_vietphrase("dicts/names.txt");
-    let hanviet_future = load_vietphrase("dicts/hanviet.txt");
-    let luatnhan_future = load_vietphrase("dicts/luatnhan.txt");
-    let pronouns_future = load_vietphrase("dicts/pronouns.txt");
+    let dict = Dictionary::default();
+    let vietphrases_future = load_vietphrase(&dict.vietphrase);
+    let names_future = load_vietphrase(&dict.names);
+    let hanviet_future = load_vietphrase(&dict.hanviet);
+    let luatnhan_future = load_vietphrase(&dict.luatnhan);
+    let pronouns_future = load_vietphrase(&dict.pronouns);
 
     let vietphrases = vietphrases_future.await.expect("something wrong");
     let names = names_future.await.expect("something wrong");
@@ -70,7 +73,10 @@ mod tests {
 
     #[test]
     fn it_works_no_change() {
-        assert_eq!("笨 成", convert("", "abc=edf", "abc=edf", "abc=edf", "", "笨成"));
+        assert_eq!(
+            "笨 成",
+            convert("", "abc=edf", "abc=edf", "abc=edf", "", "笨成")
+        );
     }
 
     #[test]
@@ -83,20 +89,17 @@ mod tests {
 
     #[test]
     fn multiple_meaning() {
-        assert_eq!(
-            "Mau",
-            convert("", "快=mau/khoái", "abc=edf", "", "", "快")
-        );
+        assert_eq!("Mau", convert("", "快=mau/khoái", "abc=edf", "", "", "快"));
     }
-   
+
     #[test]
     fn load_big_file() {
         let vietphrase = fs::read_to_string("public/dicts/vietphrase.txt")
             .expect("Something went wrong reading the file");
-        let names =
-            fs::read_to_string("public/dicts/names.txt").expect("Something went wrong reading the file");
-        let hanviet =
-            fs::read_to_string("public/dicts/hanviet.txt").expect("Something went wrong reading the file");
+        let names = fs::read_to_string("public/dicts/names.txt")
+            .expect("Something went wrong reading the file");
+        let hanviet = fs::read_to_string("public/dicts/hanviet.txt")
+            .expect("Something went wrong reading the file");
         let luatnhan = fs::read_to_string("public/dicts/luatnhan.txt")
             .expect("Something went wrong reading the file");
         let pronouns = fs::read_to_string("public/dicts/pronouns.txt")
@@ -114,26 +117,26 @@ mod tests {
         );
         assert_eq!(
             "Quân đoàn Nỗ Mễ Khải Lạp Khắc",
-                convert(
-                    &luatnhan,
-                    &vietphrase,
-                    &hanviet,
-                    &names,
-                    &pronouns,
-                    "努米凯拉克军团"
-                )
-            );
+            convert(
+                &luatnhan,
+                &vietphrase,
+                &hanviet,
+                &names,
+                &pronouns,
+                "努米凯拉克军团"
+            )
+        );
         assert_eq!(
             "Làm ta bị thương nặng",
-                convert(
-                    &luatnhan,
-                    &vietphrase,
-                    &hanviet,
-                    &names,
-                    &pronouns,
-                    "重伤了我"
-                )
-            );
+            convert(
+                &luatnhan,
+                &vietphrase,
+                &hanviet,
+                &names,
+                &pronouns,
+                "重伤了我"
+            )
+        );
         assert_eq!(
             "Này của ta chương rất lớn， thỉnh nhẫn một chút！",
             convert(
@@ -156,6 +159,5 @@ mod tests {
                 "快想办法啊！我们会没命的"
             )
         );
-
     }
 }

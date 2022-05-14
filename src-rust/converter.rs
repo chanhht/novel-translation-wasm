@@ -3,7 +3,14 @@ use bit_vec::BitVec;
 use std::collections::{HashMap, HashSet};
 use unicode_segmentation::UnicodeSegmentation;
 
-pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pronouns: &str, content: &str) -> String {
+pub fn convert(
+    luatnhan: &str,
+    vietphrase: &str,
+    hanviet: &str,
+    names: &str,
+    pronouns: &str,
+    content: &str,
+) -> String {
     let mut luatnhan_map = HashMap::new();
     let mut vietphrase_map = HashMap::new();
     let mut hanviet_map = HashMap::new();
@@ -22,7 +29,7 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
     // build luatnhan aho corasick
     let mut luatnhan_phrases = HashSet::new();
     let mut luatnhan_pair_phrases = HashMap::new();
-    for (k, v)  in luatnhan_map.iter() {
+    for (k, v) in luatnhan_map.iter() {
         if k.is_empty() {
             continue;
         }
@@ -70,15 +77,21 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
         let right_phrase = format!("_{}", luatnhan_phrase);
         if luatnhan_pair_phrases.contains_key(&left_phrase) {
             luatnhan_left_edges.insert(start, mat.clone());
-            luatnhan_left_edges_value.insert(start, *luatnhan_pair_phrases.get(&left_phrase).unwrap());
+            luatnhan_left_edges_value
+                .insert(start, *luatnhan_pair_phrases.get(&left_phrase).unwrap());
         }
         if luatnhan_pair_phrases.contains_key(&right_phrase) {
             luatnhan_right_edges.insert(start, mat.clone());
-            luatnhan_right_edges_value.insert(start, *luatnhan_pair_phrases.get(&right_phrase).unwrap());
+            luatnhan_right_edges_value
+                .insert(start, *luatnhan_pair_phrases.get(&right_phrase).unwrap());
         }
         if pre_mat.is_some() {
             let pre_match = pre_mat.unwrap();
-            let phrase_key = format!("{}_{}", &content[pre_match.start()..pre_match.end()], luatnhan_phrase);
+            let phrase_key = format!(
+                "{}_{}",
+                &content[pre_match.start()..pre_match.end()],
+                luatnhan_phrase
+            );
             if luatnhan_pair_phrases.contains_key(&phrase_key) {
                 let phrase = &content[pre_match.end()..start];
                 let mut extracted = "";
@@ -98,7 +111,7 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
             }
         }
         pre_mat = Some(mat);
-    }    
+    }
 
     // build vietphrase aho corasick
     let ac = AhoCorasickBuilder::new()
@@ -137,8 +150,8 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
             res.push_str(&*luatnhan_pairs.get(&i).unwrap().trim());
             last = *luatnhan_idx_pairs.get(&i).unwrap();
             found = true;
-        } 
-        
+        }
+
         if !found && luatnhan_left_edges.contains_key(&i) {
             let next = luatnhan_left_edges.get(&i).unwrap().end();
             if replacement_bit_vec.get(next).unwrap() {
@@ -151,8 +164,8 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
                 found = true;
                 last = mat.end();
             }
-        } 
-        
+        }
+
         if !found && replacement_bit_vec.get(i).unwrap() {
             let mat = replacements.get(&i).unwrap();
             let mat_str = &content[mat.start()..mat.end()];
@@ -169,7 +182,7 @@ pub fn convert(luatnhan: &str, vietphrase: &str, hanviet: &str, names: &str, pro
             }
             found = true;
         }
-        
+
         if !found {
             let replace_str = hanviet_map.get(current_char);
             if replace_str.is_some() {
