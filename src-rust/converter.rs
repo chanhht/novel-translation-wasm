@@ -64,12 +64,7 @@ pub fn convert(
     let mut luatnhan_right_edges_value = HashMap::new();
     let mut luatnhan_left_edges_value = HashMap::new();
     let mut luatnhan_idx_pairs = HashMap::new();
-    let mut vec = Vec::new();
     for mat in aho_corasick_luatnhan.find_iter(content) {
-        vec.push(mat);
-    }
-    vec.sort_by(|a, b| a.start().cmp(&b.start()));
-    for mat in vec {
         let luatnhan_phrase = content[mat.start()..mat.end()].trim();
         let start = mat.start();
         let end = mat.end();
