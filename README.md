@@ -5,6 +5,10 @@ Chinese Novel to Vietnamese Translation
 ## Overview
 This project use Rust to develop the core translation and compile to WebAssembly, which then able to run directly on browser. It also include a simple Vue UI application
 
+The project currently uses a rule-based approach inspired by an existing Windows app Quick Converter. The data is collected from various sources:
+- https://hadesloki.wordpress.com/2021/08/25/share-quick-translator-data-vietphrase/comment-page-1/
+- https://mephistopheles1844.wordpress.com/2021/10/08/so-sanh-cac-ban-vietphrase-cu-va-du-lieu-di-kem/
+
 ## Live demo
 https://chanhht.github.io/
 
@@ -51,6 +55,3 @@ quasar build
 # to deploy (required local setup)
 yarn deploy
 ```
-
-### Customize the configuration
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).
