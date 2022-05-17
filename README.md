@@ -20,6 +20,7 @@ npm install
 
 ### Start the app in development mode (hot-code reloading, error reporting, etc.)
 ```bash
+wasm-pack build --target web -d src/wasm
 quasar dev
 ```
 

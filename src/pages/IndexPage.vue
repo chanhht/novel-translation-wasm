@@ -4,7 +4,7 @@
       <q-input
         v-model="inputText"
         outlined
-        rows="20"
+        rows="35"
         type="textarea"
       />
       <div class="row items-center justify-center">
@@ -15,7 +15,7 @@
       <q-input
         v-model="outputText"
         outlined
-        rows="20"
+        rows="35"
         type="textarea"
       />
     </div>
@@ -88,7 +88,16 @@ export default {
   },
   data() {
     return {
-      inputText: '',
+      inputText: 
+`第一章 太阳消失
+时间:2012年12月22日
+...
+"中央电视台!中央电视台!观众朋友们,您现在收看的是中央电视台!"
+"观众朋友们!我现在的位置是纽约市的皇后区,这里刚刚发生了一起骚乱,纽约警方动用了大量人员强行驱散了骚乱人群,这次骚乱造成了一人死亡,三十多人受伤,有关情况还在继续了解..."
+...
+"现在我们再联系一下欧洲的孙菲,我们了解一下那边的情况."
+"主持人您好!"
+"孙菲您好,你现在能和我们说一下巴黎的情况吗?"`,
       outputText: ''
     }
   },
