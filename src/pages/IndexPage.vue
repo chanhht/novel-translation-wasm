@@ -25,62 +25,39 @@
 <script>
 import init, {Converter} from '../wasm/mylib.js';
 
+function loadDict(url, promise) {
+  fetch(url, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/text',
+    },
+  })
+  .then(res => res.text())
+  .then(promise)
+}
+
 let converter;
+
 init().then(() => {
   converter = Converter.new();
 
-  fetch('dicts/vietphrase.txt', {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/text',
-    },
-  })
-  .then(res => res.text())
-  .then(data => {
+  loadDict('dicts/vietphrase.txt', data => {
     converter.set_vietphrase_dict(data)
   })
 
-  fetch('dicts/names.txt', {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/text',
-    },
-  })
-  .then(res => res.text())
-  .then(data => {
+  loadDict('dicts/names.txt', data => {
     converter.set_names_dict(data)
   })
 
-  fetch('dicts/hanviet.txt', {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/text',
-    },
-  })
-  .then(res => res.text())
-  .then(data => {
+  loadDict('dicts/hanviet.txt', data => {
     converter.set_hanviet_dict(data)
   })
 
-  fetch('dicts/luatnhan.txt', {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/text',
-    },
-  })
-  .then(res => res.text())
-  .then(data => {
+  loadDict('dicts/luatnhan.txt', data => {
     converter.set_luatnhan_dict(data)
   })
 
-  fetch('dicts/pronouns.txt', {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/text',
-    },
-  })
-  .then(res => res.text())
-  .then(data => {
+  loadDict('dicts/pronouns.txt', data => {
     converter.set_pronouns_dict(data)
   })
 
