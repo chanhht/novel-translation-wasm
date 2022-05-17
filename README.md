@@ -5,6 +5,9 @@ Chinese Novel to Vietnamese Translation
 ## Overview
 This project use Rust to develop the core translation and compile to WebAssembly, which then able to run directly on browser. It also include a simple Vue UI application
 
+## Live demo
+https://chanhht.github.io/
+
 ## Local development 
 ```bash
 # build
