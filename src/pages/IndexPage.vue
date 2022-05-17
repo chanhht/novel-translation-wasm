@@ -23,9 +23,69 @@
 </template>
 
 <script>
-import init, {convert} from '../wasm/mylib.js';
+import init, {Converter} from '../wasm/mylib.js';
 
-init()
+let converter;
+init().then(() => {
+  converter = Converter.new();
+
+  fetch('dicts/vietphrase.txt', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/text',
+    },
+  })
+  .then(res => res.text())
+  .then(data => {
+    converter.set_vietphrase_dict(data)
+  })
+
+  fetch('dicts/names.txt', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/text',
+    },
+  })
+  .then(res => res.text())
+  .then(data => {
+    converter.set_names_dict(data)
+  })
+
+  fetch('dicts/hanviet.txt', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/text',
+    },
+  })
+  .then(res => res.text())
+  .then(data => {
+    converter.set_hanviet_dict(data)
+  })
+
+  fetch('dicts/luatnhan.txt', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/text',
+    },
+  })
+  .then(res => res.text())
+  .then(data => {
+    converter.set_luatnhan_dict(data)
+  })
+
+  fetch('dicts/pronouns.txt', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/text',
+    },
+  })
+  .then(res => res.text())
+  .then(data => {
+    converter.set_pronouns_dict(data)
+  })
+
+})
+
 
 export default {
   setup () {
@@ -57,10 +117,10 @@ export default {
   },
   methods: {
     translate() {
-      convert(this.inputText).then(outputText => {
-        this.outputText = outputText
-        console.log(outputText)
-      })
+      var startTime = performance.now()
+      this.outputText = converter.convert(this.inputText)
+      var endTime = performance.now()
+      console.log(`Convert takes ${endTime - startTime} milliseconds`)
     }
   }
 }

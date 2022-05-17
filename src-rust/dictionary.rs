@@ -1,3 +1,4 @@
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Dictionary {
     pub vietphrase: String,
     pub names: String,
