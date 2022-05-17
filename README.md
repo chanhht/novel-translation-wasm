@@ -1,8 +1,17 @@
-# Novel Translation (novel-translation-wasm)
+# Chinese Novel to Vietnamese Translation
 
-Novel Translation
+Chinese Novel to Vietnamese Translation
 
-## Install the dependencies
+## Overview
+This project use Rust to develop the core translation and compile to WebAssembly, which then able to run directly on browser. It also include a simple Vue UI application
+
+## Local development 
+```bash
+# build
+cargo build
+# test
+cargo test
+```
 ```bash
 yarn
 # or
@@ -22,19 +31,21 @@ yarn lint
 npm run lint
 ```
 
-
 ### Format the files
 ```bash
+cargo fmt
 yarn format
 # or
 npm run format
 ```
 
-
-
 ### Build the app for production
+Production build
 ```bash
+wasm-pack build --target web -d src/wasm --release
 quasar build
+# to deploy (required local setup)
+yarn deploy
 ```
 
 ### Customize the configuration
