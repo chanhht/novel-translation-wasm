@@ -10,20 +10,14 @@ mod tests {
     #[test]
     fn it_works_no_change() {
         let mut converter = Converter::new();
-        assert_eq!(
-            "笨 成",
-            converter.convert(&"笨成".to_owned())
-        );
+        assert_eq!("笨 成", converter.convert(&"笨成".to_owned()));
     }
 
     #[test]
     fn it_works() {
         let mut converter = Converter::new();
         converter.set_vietphrase_dict("笨=bổn\n成=thành".to_owned());
-        assert_eq!(
-            "Bổn thành",
-            converter.convert(&"笨成".to_owned())
-        );
+        assert_eq!("Bổn thành", converter.convert(&"笨成".to_owned()));
     }
 
     #[test]

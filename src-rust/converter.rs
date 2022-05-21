@@ -15,6 +15,7 @@ pub struct Converter {
 
     luatnhan_pair_phrases: HashMap<String, String>,
     aho_corasick_luatnhan: Option<AhoCorasick>,
+    aho_corasick_vietphrase: Option<AhoCorasick>,
 }
 
 #[wasm_bindgen]
@@ -29,12 +30,11 @@ impl Converter {
             pronouns_map: HashMap::new(),
             luatnhan_pair_phrases: HashMap::new(),
             aho_corasick_luatnhan: None,
+            aho_corasick_vietphrase: None,
         }
     }
 
-    pub fn convert(&mut self, content: &str
-    ) -> String {
-
+    pub fn convert(&mut self, content: &str) -> String {
         if !self.init {
             for (k, v) in &self.names_map {
                 self.vietphrase_map.insert(k.to_string(), v.to_string());
@@ -54,27 +54,38 @@ impl Converter {
                 if !ps1.is_empty() {
                     luatnhan_phrases.insert(ps1.clone());
                 } else {
-                    self.luatnhan_pair_phrases.insert(format!("_{}", &ps2), v.to_string());
+                    self.luatnhan_pair_phrases
+                        .insert(format!("_{}", &ps2), v.to_string());
                 }
-    
+
                 if !ps2.is_empty() {
                     luatnhan_phrases.insert(ps2.clone());
                 } else {
-                    self.luatnhan_pair_phrases.insert(format!("{}_", &ps1), v.to_string());
+                    self.luatnhan_pair_phrases
+                        .insert(format!("{}_", &ps1), v.to_string());
                 }
-    
+
                 if !ps1.is_empty() && !ps2.is_empty() {
-                    self.luatnhan_pair_phrases.insert(format!("{}_{}", ps1, ps2), v.to_string());
+                    self.luatnhan_pair_phrases
+                        .insert(format!("{}_{}", ps1, ps2), v.to_string());
                 }
             }
-    
-            self.aho_corasick_luatnhan = Some(AhoCorasickBuilder::new()
-                .match_kind(MatchKind::LeftmostLongest)
-                .build(luatnhan_phrases));
+
+            self.aho_corasick_luatnhan = Some(
+                AhoCorasickBuilder::new()
+                    .match_kind(MatchKind::LeftmostLongest)
+                    .build(luatnhan_phrases),
+            );
+
+            // build vietphrase aho corasick
+            self.aho_corasick_vietphrase = Some(
+                AhoCorasickBuilder::new()
+                    .match_kind(MatchKind::LeftmostLongest)
+                    .build(self.vietphrase_map.keys()),
+            );
 
             self.init = true;
         }
-
 
         let mut pre_mat: Option<Match> = None;
         let mut luatnhan_pairs = HashMap::new();
@@ -83,7 +94,12 @@ impl Converter {
         let mut luatnhan_right_edges_value = HashMap::new();
         let mut luatnhan_left_edges_value = HashMap::new();
         let mut luatnhan_idx_pairs = HashMap::new();
-        for mat in self.aho_corasick_luatnhan.as_ref().expect("Resources missing").find_iter(content) {
+        for mat in self
+            .aho_corasick_luatnhan
+            .as_ref()
+            .expect("Resources missing")
+            .find_iter(content)
+        {
             let luatnhan_phrase = content[mat.start()..mat.end()].trim();
             let start = mat.start();
             let end = mat.end();
@@ -96,8 +112,10 @@ impl Converter {
             }
             if self.luatnhan_pair_phrases.contains_key(&right_phrase) {
                 luatnhan_right_edges.insert(start, mat.clone());
-                luatnhan_right_edges_value
-                    .insert(start, self.luatnhan_pair_phrases.get(&right_phrase).unwrap());
+                luatnhan_right_edges_value.insert(
+                    start,
+                    self.luatnhan_pair_phrases.get(&right_phrase).unwrap(),
+                );
             }
             if pre_mat.is_some() {
                 let pre_match = pre_mat.unwrap();
@@ -127,14 +145,14 @@ impl Converter {
             pre_mat = Some(mat);
         }
 
-        // build vietphrase aho corasick
-        let ac = AhoCorasickBuilder::new()
-            .match_kind(MatchKind::LeftmostLongest)
-            .build(self.vietphrase_map.keys());
-
         let mut replacements = HashMap::new();
         let mut replacement_bit_vec = BitVec::from_elem(content.len(), false);
-        for mat in ac.find_iter(content) {
+        for mat in self
+            .aho_corasick_vietphrase
+            .as_ref()
+            .expect("Resource missing")
+            .find_iter(content)
+        {
             replacement_bit_vec.set(mat.start(), true);
             replacements.insert(mat.start(), mat);
         }
