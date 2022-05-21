@@ -6,70 +6,75 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct Converter {
-    dirty: bool,
+    init: bool,
     luatnhan_map: HashMap<String, String>,
     vietphrase_map: HashMap<String, String>,
     hanviet_map: HashMap<String, String>,
     names_map: HashMap<String, String>,
     pronouns_map: HashMap<String, String>,
+
+    luatnhan_pair_phrases: HashMap<String, String>,
+    aho_corasick_luatnhan: Option<AhoCorasick>,
 }
 
 #[wasm_bindgen]
 impl Converter {
     pub fn new() -> Converter {
         Converter {
-            dirty: true,
+            init: false,
             luatnhan_map: HashMap::new(),
             vietphrase_map: HashMap::new(),
             hanviet_map: HashMap::new(),
             names_map: HashMap::new(),
             pronouns_map: HashMap::new(),
+            luatnhan_pair_phrases: HashMap::new(),
+            aho_corasick_luatnhan: None,
         }
     }
 
     pub fn convert(&mut self, content: &str
     ) -> String {
 
-        if self.dirty {
+        if !self.init {
             for (k, v) in &self.names_map {
                 self.vietphrase_map.insert(k.to_string(), v.to_string());
             }
             for (k, v) in &self.pronouns_map {
                 self.vietphrase_map.insert(k.to_string(), v.to_string());
             }
-            self.dirty = false;
+            // build luatnhan aho corasick
+            let mut luatnhan_phrases = HashSet::new();
+            for (k, v) in self.luatnhan_map.iter() {
+                if k.is_empty() {
+                    continue;
+                }
+                let mut ps = k.trim().splitn(2, "{0}");
+                let ps1 = ps.next().unwrap().trim().to_string();
+                let ps2 = ps.next().unwrap().trim().to_string();
+                if !ps1.is_empty() {
+                    luatnhan_phrases.insert(ps1.clone());
+                } else {
+                    self.luatnhan_pair_phrases.insert(format!("_{}", &ps2), v.to_string());
+                }
+    
+                if !ps2.is_empty() {
+                    luatnhan_phrases.insert(ps2.clone());
+                } else {
+                    self.luatnhan_pair_phrases.insert(format!("{}_", &ps1), v.to_string());
+                }
+    
+                if !ps1.is_empty() && !ps2.is_empty() {
+                    self.luatnhan_pair_phrases.insert(format!("{}_{}", ps1, ps2), v.to_string());
+                }
+            }
+    
+            self.aho_corasick_luatnhan = Some(AhoCorasickBuilder::new()
+                .match_kind(MatchKind::LeftmostLongest)
+                .build(luatnhan_phrases));
+
+            self.init = true;
         }
 
-        // build luatnhan aho corasick
-        let mut luatnhan_phrases = HashSet::new();
-        let mut luatnhan_pair_phrases = HashMap::new();
-        for (k, v) in self.luatnhan_map.iter() {
-            if k.is_empty() {
-                continue;
-            }
-            let mut ps = k.trim().splitn(2, "{0}");
-            let ps1 = ps.next().unwrap().trim();
-            let ps2 = ps.next().unwrap().trim();
-            if !ps1.is_empty() {
-                luatnhan_phrases.insert(ps1);
-            } else {
-                luatnhan_pair_phrases.insert(format!("_{}", ps2), v);
-            }
-
-            if !ps2.is_empty() {
-                luatnhan_phrases.insert(ps2);
-            } else {
-                luatnhan_pair_phrases.insert(format!("{}_", ps1), v);
-            }
-
-            if !ps1.is_empty() && !ps2.is_empty() {
-                luatnhan_pair_phrases.insert(format!("{}_{}", ps1, ps2), v);
-            }
-        }
-
-        let aho_corasick_luatnhan = AhoCorasickBuilder::new()
-            .match_kind(MatchKind::LeftmostLongest)
-            .build(luatnhan_phrases);
 
         let mut pre_mat: Option<Match> = None;
         let mut luatnhan_pairs = HashMap::new();
@@ -78,21 +83,21 @@ impl Converter {
         let mut luatnhan_right_edges_value = HashMap::new();
         let mut luatnhan_left_edges_value = HashMap::new();
         let mut luatnhan_idx_pairs = HashMap::new();
-        for mat in aho_corasick_luatnhan.find_iter(content) {
+        for mat in self.aho_corasick_luatnhan.as_ref().expect("Resources missing").find_iter(content) {
             let luatnhan_phrase = content[mat.start()..mat.end()].trim();
             let start = mat.start();
             let end = mat.end();
             let left_phrase = format!("{}_", luatnhan_phrase);
             let right_phrase = format!("_{}", luatnhan_phrase);
-            if luatnhan_pair_phrases.contains_key(&left_phrase) {
+            if self.luatnhan_pair_phrases.contains_key(&left_phrase) {
                 luatnhan_left_edges.insert(start, mat.clone());
                 luatnhan_left_edges_value
-                    .insert(start, *luatnhan_pair_phrases.get(&left_phrase).unwrap());
+                    .insert(start, self.luatnhan_pair_phrases.get(&left_phrase).unwrap());
             }
-            if luatnhan_pair_phrases.contains_key(&right_phrase) {
+            if self.luatnhan_pair_phrases.contains_key(&right_phrase) {
                 luatnhan_right_edges.insert(start, mat.clone());
                 luatnhan_right_edges_value
-                    .insert(start, *luatnhan_pair_phrases.get(&right_phrase).unwrap());
+                    .insert(start, self.luatnhan_pair_phrases.get(&right_phrase).unwrap());
             }
             if pre_mat.is_some() {
                 let pre_match = pre_mat.unwrap();
@@ -101,7 +106,7 @@ impl Converter {
                     &content[pre_match.start()..pre_match.end()],
                     luatnhan_phrase
                 );
-                if luatnhan_pair_phrases.contains_key(&phrase_key) {
+                if self.luatnhan_pair_phrases.contains_key(&phrase_key) {
                     let phrase = &content[pre_match.end()..start];
                     let mut extracted = "";
                     if self.names_map.contains_key(phrase) {
@@ -112,7 +117,7 @@ impl Converter {
                         extracted = self.vietphrase_map.get(phrase).unwrap();
                     }
                     if !extracted.is_empty() {
-                        let phrase_value = *luatnhan_pair_phrases.get(&phrase_key).unwrap();
+                        let phrase_value = self.luatnhan_pair_phrases.get(&phrase_key).unwrap();
                         let translated = phrase_value.replace("{0}", extracted);
                         luatnhan_pairs.insert(pre_match.start(), translated);
                         luatnhan_idx_pairs.insert(pre_match.start(), end);
